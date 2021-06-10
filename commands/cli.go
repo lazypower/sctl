@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -102,6 +103,10 @@ func BuildContextualMenu() []cli.Command {
 					plaintext = []byte(base64.StdEncoding.EncodeToString(plaintext))
 				}
 
+				// calculate the sha256sum of the value
+				valueChecksum := sha256.Sum256(plaintext)
+				log.Debugf("Secret Sha256sum: %x\n", valueChecksum)
+
 				// Work with the envelope's provided key or switch to CLI flags/env
 				var client cloud.KMS
 				if keyURI == "" {
@@ -125,6 +130,7 @@ func BuildContextualMenu() []cli.Command {
 				if err != nil {
 					return err
 				}
+
 				// re-encode the binary data we got back.
 				encoded := base64.StdEncoding.EncodeToString(cypher)
 				toAdd := utils.Secret{
@@ -132,6 +138,7 @@ func BuildContextualMenu() []cli.Command {
 					Cyphertext: encoded,
 					Created:    time.Now(),
 					Encoding:   secretEncoding,
+					Sha256sum:  fmt.Sprintf("%x", valueChecksum[:]),
 				}
 
 				return utils.AddSecret(toAdd, keyURI, true, c.String("envelope"))
@@ -446,6 +453,10 @@ func BuildContextualMenu() []cli.Command {
 						return errors.Wrap(err, "failed secret decrypt")
 					}
 
+					// calculate the sha256sum of the value
+					valueChecksum := sha256.Sum256(decoded)
+					log.Debugf("Secret Sha256sum: %x\n", valueChecksum)
+
 					if newKey != "" {
 						// Init a KMS client
 						newClient := cloud.NewGCPKMS(newKey)
@@ -461,6 +472,7 @@ func BuildContextualMenu() []cli.Command {
 							Cyphertext: encoded,
 							Created:    time.Now(),
 							Encoding:   secret.Encoding,
+							Sha256sum:  fmt.Sprintf("%x", valueChecksum[:]),
 						}
 						log.Debug("Saving new secret: ", toAdd.Name, " With key: ", newKey)
 						// ReKeying with a new secret is an explicit process. Invoke addSecret without
@@ -484,6 +496,7 @@ func BuildContextualMenu() []cli.Command {
 						Cyphertext: encoded,
 						Created:    time.Now(),
 						Encoding:   secret.Encoding,
+						Sha256sum:  fmt.Sprintf("%x", valueChecksum[:]),
 					}
 
 					err = utils.AddSecret(toAdd, sctlKey, true, c.String("envelope"))

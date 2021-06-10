@@ -15,16 +15,18 @@ import (
 // An example JSON-serialized secret:
 //
 //    {
-//      "name": "A_SECRET",
-//      "cypher": "0xD34DB33F",
 //      "created": "2019-05-01 13:01:27.189242799 -0500 CDT m=+0.000075907",
-//      "encoding": "plain"
+//      "cypher": "0xD34DB33F",
+//      "encoding": "plain",
+//      "name": "A_SECRET",
+//      "sha256sum": "efcd8d863dcc059f1b0728ef52c5fcf0b61db8462a87cb787ab75140d9c2693a"
 //     }
 type Secret struct {
 	Name       string    `json:"name"`
 	Cyphertext string    `json:"cypher"`
 	Created    time.Time `json:"created"`
 	Encoding   string    `json:"encoding"`
+	Sha256sum  string    `json:"sha256sum"`
 }
 
 // Secrets - A collection of Secret
